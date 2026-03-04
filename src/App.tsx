@@ -111,7 +111,7 @@ export default function App() {
     setSuccess(null);
 
     try {
-      const response = await fetch("/api/send-to-sheet", {
+      const response = await fetch("/.netlify/functions/send-to-sheet", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
