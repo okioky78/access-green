@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 import type { OAuth2Client } from "google-auth-library";
 import { GOOGLE_SHEETS_SCOPE } from "./google-sheet-client.ts";
+import { getRuntimeEnv } from "../config.ts";
 import { createHttpError } from "../shared/http.ts";
 import { withUpstreamTimeout, type UpstreamRequestOptions } from "../shared/upstream.ts";
 
@@ -16,10 +17,10 @@ export interface OAuthConfig {
 }
 
 export const getOAuthConfig = (): OAuthConfig => {
-  const clientId = (process.env.GOOGLE_OAUTH_CLIENT_ID || "").trim();
-  const clientSecret = (process.env.GOOGLE_OAUTH_CLIENT_SECRET || "").trim();
-  const redirectUri = (process.env.GOOGLE_OAUTH_REDIRECT_URI || "").trim();
-  const cookieSecret = (process.env.GOOGLE_OAUTH_COOKIE_SECRET || "").trim();
+  const clientId = getRuntimeEnv("GOOGLE_OAUTH_CLIENT_ID");
+  const clientSecret = getRuntimeEnv("GOOGLE_OAUTH_CLIENT_SECRET");
+  const redirectUri = getRuntimeEnv("GOOGLE_OAUTH_REDIRECT_URI");
+  const cookieSecret = getRuntimeEnv("GOOGLE_OAUTH_COOKIE_SECRET");
 
   if (!clientId || !clientSecret || !redirectUri || !cookieSecret) {
     throw createHttpError(
