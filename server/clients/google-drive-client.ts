@@ -77,48 +77,6 @@ const throwDriveApiHttpError = (
   throw error;
 };
 
-export const requireDriveRootAccess = async (
-  drive: DriveClient,
-  driveRootFolderId = getDriveConfig().driveRootFolderId,
-) => {
-  try {
-    const response = await withDriveTimeout(
-      (requestOptions) =>
-        drive.files.get(
-          {
-            fileId: driveRootFolderId,
-            fields: "id,name,mimeType",
-            supportsAllDrives: true,
-          },
-          requestOptions,
-        ),
-    );
-
-    if (response.data.mimeType !== FOLDER_MIME_TYPE) {
-      throw createHttpError(
-        "설정된 Google Drive 저장소가 폴더가 아닙니다.",
-        500,
-        "DRIVE_ROOT_NOT_FOLDER",
-      );
-    }
-
-    return response.data;
-  } catch (error) {
-    if (error instanceof HttpError) throw error;
-
-    const statusCode = getDriveErrorStatusCode(error);
-    if (statusCode === 403 || statusCode === 404) {
-      throw createHttpError(
-        "이 Google 계정은 영수증 저장 폴더에 접근할 수 없습니다. 관리자에게 폴더 공유 권한을 요청해 주세요.",
-        403,
-        "DRIVE_ROOT_ACCESS_DENIED",
-      );
-    }
-
-    throw error;
-  }
-};
-
 const escapeDriveQueryValue = (value: string) =>
   (value || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 
