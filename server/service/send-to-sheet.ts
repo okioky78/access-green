@@ -77,6 +77,9 @@ export const buildAdmissionSheetRow = (
   imageUrl,
 ];
 
+const isAmbiguousSheetAppendFailure = (error: unknown) =>
+  error instanceof HttpError && (error.code === "SHEET_TIMEOUT" || error.statusCode === 504);
+
 interface SendAdmissionInfoToSheetInput {
   drive: DriveClient;
   fields: unknown;
@@ -116,9 +119,21 @@ export const sendAdmissionInfoToSheet = async ({
     });
   } catch (error) {
     console.error("Google Sheets append failed", error);
-    await deleteDriveFile({ drive, fileId: uploadedDriveFile.id }).catch((deleteError) => {
-      console.error("Admission certificate image rollback failed", deleteError);
-    });
+
+    if (isAmbiguousSheetAppendFailure(error)) {
+      console.error(
+        "Skipping admission certificate image rollback because the Google Sheets append result is unknown.",
+        {
+          code: error.code,
+          statusCode: error.statusCode,
+          driveFileId: uploadedDriveFile.id,
+        },
+      );
+    } else {
+      await deleteDriveFile({ drive, fileId: uploadedDriveFile.id }).catch((deleteError) => {
+        console.error("Admission certificate image rollback failed", deleteError);
+      });
+    }
 
     if (error instanceof HttpError) {
       throw error;
