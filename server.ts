@@ -1,9 +1,12 @@
-import express from "express";
+import express, {
+  type Request as ExpressRequest,
+  type Response as ExpressResponse,
+} from "express";
 import { createServer as createViteServer } from "vite";
-import { google } from "googleapis";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import apiApp from "./server/api-app.ts";
 
 dotenv.config();
 
@@ -13,56 +16,62 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 
-app.use(express.json());
+const createFetchRequest = (req: ExpressRequest) => {
+  const url = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+  const headers = new Headers();
 
-// API: Send data to Google Sheets
-app.post("/api/send-to-sheet", async (req, res) => {
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (Array.isArray(value)) {
+      value.forEach((item) => headers.append(key, item));
+    } else if (value !== undefined) {
+      headers.set(key, String(value));
+    }
+  }
+
+  const method = req.method.toUpperCase();
+  const init: RequestInit & { duplex?: "half" } = {
+    method,
+    headers,
+  };
+
+  if (method !== "GET" && method !== "HEAD") {
+    init.body = req as unknown as BodyInit;
+    init.duplex = "half";
+  }
+
+  return new Request(url, init);
+};
+
+const sendFetchResponse = async (res: ExpressResponse, response: Response) => {
+  res.status(response.status);
+  const setCookieHeaders =
+    "getSetCookie" in response.headers
+      ? (response.headers as Headers & { getSetCookie: () => string[] }).getSetCookie()
+      : [];
+
+  response.headers.forEach((value, key) => {
+    if (key.toLowerCase() === "set-cookie" && setCookieHeaders.length) {
+      return;
+    }
+
+    res.append(key, value);
+  });
+  setCookieHeaders.forEach((cookie) => res.append("set-cookie", cookie));
+
+  const body = Buffer.from(await response.arrayBuffer());
+  res.send(body);
+};
+
+app.all("/api/*", async (req, res, next) => {
   try {
-    const { name, university, college, department, admissionType, examineeNumber } = req.body;
-    const spreadsheetId = "1LjYs9rHD-IErczSdL6Ld9thqLHxVBqU9iQXg7DkUfog";
+    const response = await apiApp.fetch(createFetchRequest(req));
 
-    const clientEmail = (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || process.env.GOOGLE_SERVICE_ACCOUNT || "").trim();
-    const privateKey = (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n").trim();
-
-    if (!clientEmail || !privateKey) {
-      return res.status(400).json({ 
-        error: "Google Sheets API credentials are not configured. Please set GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_PRIVATE_KEY in your secrets." 
-      });
-    }
-
-    try {
-      const auth = new google.auth.JWT({
-        email: clientEmail,
-        key: privateKey,
-        scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-      });
-      
-      const sheets = google.sheets({ version: "v4", auth });
-      
-      await sheets.spreadsheets.values.append({
-        spreadsheetId,
-        range: "A:F",
-        valueInputOption: "USER_ENTERED",
-        requestBody: {
-          values: [[name, examineeNumber, university, college, department, admissionType]],
-        },
-      });
-    } catch (sheetError: any) {
-      console.error("Sheet error:", sheetError);
-      if (sheetError.message.includes("range")) {
-        return res.status(400).json({ error: "구글 시트의 'Sheet1' 또는 첫 번째 시트를 찾을 수 없습니다." });
-      }
-      return res.status(500).json({ error: "구글 시트 전송 실패: " + sheetError.message });
-    }
-
-    res.json({ success: true });
-  } catch (error: any) {
-    console.error("General error:", error);
-    res.status(500).json({ error: error.message });
+    await sendFetchResponse(res, response);
+  } catch (error) {
+    next(error);
   }
 });
 
-// Vite middleware for development
 if (process.env.NODE_ENV !== "production") {
   const vite = await createViteServer({
     server: { middlewareMode: true },
