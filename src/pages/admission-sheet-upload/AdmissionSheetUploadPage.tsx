@@ -15,7 +15,6 @@ import { AdmissionInfoCard } from "./ui/AdmissionInfoCard";
 import { AdmissionSheetLayout } from "./ui/AdmissionSheetLayout";
 import { FeedbackMessages } from "./ui/FeedbackMessages";
 import { LoginRequiredUploadGate } from "./ui/LoginRequiredUploadGate";
-import { PageFooter } from "./ui/PageFooter";
 import { UploadDropzone } from "./ui/UploadDropzone";
 
 export const AdmissionSheetUploadPage = () => {
@@ -136,6 +135,7 @@ export const AdmissionSheetUploadPage = () => {
   const sheetUrl = getSheetUrl(
     import.meta.env.VITE_GOOGLE_ADMITTED_APPLICANTS_SPREADSHEET_ID,
   );
+  const hasSelectedFile = Boolean(imageSelection.file);
 
   useEffect(function resetSelectionWhenLoggedOut() {
     if (googleConnection.isAuthenticated || !imageSelection.file) return;
@@ -153,7 +153,7 @@ export const AdmissionSheetUploadPage = () => {
     >
       <main
         className={
-          googleConnection.isAuthenticated
+          googleConnection.isAuthenticated && hasSelectedFile
             ? "grid grid-cols-1 gap-8 md:grid-cols-[1.15fr_0.85fr]"
             : "mx-auto flex min-h-[420px] max-w-lg flex-col justify-center sm:min-h-[500px] md:min-h-[520px]"
         }
@@ -192,28 +192,38 @@ export const AdmissionSheetUploadPage = () => {
               </button>
             </section>
 
-            <section className="space-y-6">
-              <AdmissionInfoCard
-                data={data}
-                isAuthenticated={googleConnection.isAuthenticated}
-                isSaving={isSaving}
-                canSave={canSave}
-                saveRequirementMessage={saveRequirementMessage}
-                onSave={handleSave}
-              />
-
+            {!hasSelectedFile && (
               <FeedbackMessages
                 error={error}
                 message={message}
                 sheetUrl={sheetUrl}
                 success={success}
               />
-            </section>
+            )}
+
+            {hasSelectedFile && (
+              <section className="space-y-6">
+                <AdmissionInfoCard
+                  data={data}
+                  isAuthenticated={googleConnection.isAuthenticated}
+                  isSaving={isSaving}
+                  canSave={canSave}
+                  saveRequirementMessage={saveRequirementMessage}
+                  onSave={handleSave}
+                />
+
+                <FeedbackMessages
+                  error={error}
+                  message={message}
+                  sheetUrl={sheetUrl}
+                  success={success}
+                />
+              </section>
+            )}
           </>
         )}
       </main>
 
-      <PageFooter />
     </AdmissionSheetLayout>
   );
 };

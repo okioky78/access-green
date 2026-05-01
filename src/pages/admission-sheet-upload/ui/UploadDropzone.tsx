@@ -130,7 +130,7 @@ export const UploadDropzone = ({
           type="button"
           onClick={onReset}
           disabled={disabled}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 py-4 font-semibold text-neutral-500 transition-all hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white py-4 text-sm font-semibold text-neutral-500 transition hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <RotateCcw className="h-5 w-5" />
           다시 선택하기
