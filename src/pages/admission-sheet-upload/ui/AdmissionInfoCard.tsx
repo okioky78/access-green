@@ -83,11 +83,7 @@ export const AdmissionInfoCard = ({
           type="button"
           onClick={onSave}
           disabled={!canSave || isSaving}
-          className={`flex w-full items-center justify-center gap-2 rounded-xl py-4 font-semibold transition-all ${
-            canSave && !isSaving
-              ? "bg-emerald-600 text-white shadow-lg shadow-emerald-100 hover:bg-emerald-700"
-              : "cursor-not-allowed bg-neutral-200 text-neutral-400"
-          }`}
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 py-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-neutral-300"
         >
           {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
           {isAuthenticated ? "이미지와 함께 시트에 저장" : "Google 로그인 후 저장"}

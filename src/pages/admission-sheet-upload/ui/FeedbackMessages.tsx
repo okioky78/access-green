@@ -7,9 +7,10 @@ type FeedbackMessagesProps = {
   error: string | null;
   success: AdmissionSheetSaveResponse | null;
   message: string | null;
+  sheetUrl: string | null;
 };
 
-export const FeedbackMessages = ({ error, success, message }: FeedbackMessagesProps) => (
+export const FeedbackMessages = ({ error, success, message, sheetUrl }: FeedbackMessagesProps) => (
   <>
     <AnimatePresence>
       {error && (
@@ -52,14 +53,26 @@ export const FeedbackMessages = ({ error, success, message }: FeedbackMessagesPr
             <div className="min-w-0">
               <p className="text-sm font-semibold">합격자 명단 시트에 이미지와 정보가 저장되었습니다.</p>
               <p className="mt-1 break-all text-xs text-emerald-600">{success.filename}</p>
-              <a
-                href={success.driveFileUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-2 inline-block text-sm font-semibold underline underline-offset-4"
-              >
-                Drive에서 이미지 열기
-              </a>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2">
+                {sheetUrl && (
+                  <a
+                    href={sheetUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block text-sm font-semibold underline underline-offset-4"
+                  >
+                    Sheet 열기
+                  </a>
+                )}
+                <a
+                  href={success.driveFileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-block text-sm font-semibold underline underline-offset-4"
+                >
+                  Drive에서 이미지 열기
+                </a>
+              </div>
             </div>
           </div>
         </motion.div>

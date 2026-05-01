@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { FileText, Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 
 import { getApiErrorMessage, isAuthRequiredError } from "../../shared/api";
 import {
@@ -12,8 +12,9 @@ import {
 import { useGoogleConnection } from "./hooks/useGoogleConnection";
 import { useImageSelection } from "./hooks/useImageSelection";
 import { AdmissionInfoCard } from "./ui/AdmissionInfoCard";
+import { AdmissionSheetLayout } from "./ui/AdmissionSheetLayout";
 import { FeedbackMessages } from "./ui/FeedbackMessages";
-import { GoogleConnectionCard } from "./ui/GoogleConnectionCard";
+import { LoginRequiredUploadGate } from "./ui/LoginRequiredUploadGate";
 import { PageFooter } from "./ui/PageFooter";
 import { UploadDropzone } from "./ui/UploadDropzone";
 
@@ -132,80 +133,98 @@ export const AdmissionSheetUploadPage = () => {
     hasFile: Boolean(imageSelection.file),
     isAuthenticated: googleConnection.isAuthenticated,
   });
+  const sheetUrl = getSheetUrl(
+    import.meta.env.VITE_GOOGLE_ADMITTED_APPLICANTS_SPREADSHEET_ID,
+  );
+
+  useEffect(function resetSelectionWhenLoggedOut() {
+    if (googleConnection.isAuthenticated || !imageSelection.file) return;
+
+    handleReset();
+  }, [googleConnection.isAuthenticated, imageSelection.file]);
 
   return (
-    <div className="min-h-screen bg-neutral-50 p-4 font-sans text-neutral-900 md:p-8">
-      <div className="mx-auto max-w-5xl">
-        <header className="mb-12 text-center">
-          <h1 className="mb-4 text-4xl font-bold tracking-tight">
-            대학 합격 정보 추출기
-          </h1>
-          <p className="text-neutral-500">
-            합격증 이미지를 업로드하여 정보를 추출하고 구글 시트에 이미지와 함께 저장하세요.
-          </p>
-        </header>
+    <AdmissionSheetLayout
+      isAuthenticated={googleConnection.isAuthenticated}
+      isLoggingOut={googleConnection.isLoggingOut}
+      onLogin={googleConnection.googleLogin}
+      onLogout={googleConnection.googleLogout}
+      sheetUrl={sheetUrl}
+    >
+      <main
+        className={
+          googleConnection.isAuthenticated
+            ? "grid grid-cols-1 gap-8 md:grid-cols-[1.15fr_0.85fr]"
+            : "mx-auto flex min-h-[420px] max-w-lg flex-col justify-center sm:min-h-[500px] md:min-h-[520px]"
+        }
+      >
+        {!googleConnection.isAuthenticated ? (
+          <LoginRequiredUploadGate onLogin={googleConnection.googleLogin} />
+        ) : (
+          <>
+            <section className="space-y-6">
+              <UploadDropzone
+                file={imageSelection.file}
+                preview={imageSelection.preview}
+                disabled={isBusy}
+                onFileSelect={selectFile}
+                onFileReject={rejectFile}
+                onReset={handleReset}
+              />
 
-        <main className="grid grid-cols-1 gap-8 md:grid-cols-[1.15fr_0.85fr]">
-          <section className="space-y-6">
-            <UploadDropzone
-              file={imageSelection.file}
-              preview={imageSelection.preview}
-              disabled={isBusy}
-              onFileSelect={selectFile}
-              onFileReject={rejectFile}
-              onReset={handleReset}
-            />
+              <button
+                type="button"
+                onClick={handleExtract}
+                disabled={!canExtract}
+                className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-white py-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:border-neutral-200 disabled:text-neutral-300"
+              >
+                {isExtracting ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    정보 추출 중...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5" />
+                    정보 추출하기
+                  </>
+                )}
+              </button>
+            </section>
 
-            <button
-              type="button"
-              onClick={handleExtract}
-              disabled={!canExtract}
-              className={`flex w-full items-center justify-center gap-2 rounded-xl py-4 font-semibold transition-all ${
-                canExtract
-                  ? "bg-neutral-900 text-white shadow-lg shadow-neutral-200 hover:bg-neutral-800"
-                  : "cursor-not-allowed bg-neutral-200 text-neutral-400"
-              }`}
-            >
-              {isExtracting ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  정보 추출 중...
-                </>
-              ) : (
-                <>
-                  <FileText className="h-5 w-5" />
-                  {googleConnection.isAuthenticated ? "정보 추출하기" : "Google 로그인 후 추출"}
-                </>
-              )}
-            </button>
-          </section>
+            <section className="space-y-6">
+              <AdmissionInfoCard
+                data={data}
+                isAuthenticated={googleConnection.isAuthenticated}
+                isSaving={isSaving}
+                canSave={canSave}
+                saveRequirementMessage={saveRequirementMessage}
+                onSave={handleSave}
+              />
 
-          <section className="space-y-6">
-            <GoogleConnectionCard
-              isAuthenticated={googleConnection.isAuthenticated}
-              isBusy={isBusy}
-              isLoggingOut={googleConnection.isLoggingOut}
-              onLogin={googleConnection.googleLogin}
-              onLogout={googleConnection.googleLogout}
-            />
+              <FeedbackMessages
+                error={error}
+                message={message}
+                sheetUrl={sheetUrl}
+                success={success}
+              />
+            </section>
+          </>
+        )}
+      </main>
 
-            <AdmissionInfoCard
-              data={data}
-              isAuthenticated={googleConnection.isAuthenticated}
-              isSaving={isSaving}
-              canSave={canSave}
-              saveRequirementMessage={saveRequirementMessage}
-              onSave={handleSave}
-            />
-
-            <FeedbackMessages error={error} message={message} success={success} />
-          </section>
-        </main>
-
-        <PageFooter />
-      </div>
-    </div>
+      <PageFooter />
+    </AdmissionSheetLayout>
   );
+};
+
+const getSheetUrl = (spreadsheetId?: string) => {
+  const normalizedSpreadsheetId = spreadsheetId?.trim();
+  if (!normalizedSpreadsheetId || normalizedSpreadsheetId.includes("your-admitted-applicants-spreadsheet-id")) {
+    return null;
+  }
+
+  return `https://docs.google.com/spreadsheets/d/${encodeURIComponent(normalizedSpreadsheetId)}/edit`;
 };
 
 type SaveRequirementInput = {
