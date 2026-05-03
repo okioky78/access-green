@@ -53,7 +53,6 @@ export const useGoogleConnection = ({
     if (authSuccess === "success") {
       setLoginState();
       setIsAuthenticated(true);
-      onSuccess("Google 로그인이 완료되었습니다.");
     }
 
     if (authError || authSuccess) {

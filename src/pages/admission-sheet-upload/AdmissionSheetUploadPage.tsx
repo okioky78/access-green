@@ -135,7 +135,7 @@ export const AdmissionSheetUploadPage = () => {
   const sheetUrl = getSheetUrl(
     import.meta.env.VITE_GOOGLE_ADMITTED_APPLICANTS_SPREADSHEET_ID,
   );
-  const hasSelectedFile = Boolean(imageSelection.file);
+  const isInfoPanelOpen = Boolean(data || isSaving || success);
 
   useEffect(function resetSelectionWhenLoggedOut() {
     if (googleConnection.isAuthenticated || !imageSelection.file) return;
@@ -153,7 +153,7 @@ export const AdmissionSheetUploadPage = () => {
     >
       <main
         className={
-          googleConnection.isAuthenticated && hasSelectedFile
+          googleConnection.isAuthenticated && isInfoPanelOpen
             ? "grid grid-cols-1 gap-8 md:grid-cols-[1.15fr_0.85fr]"
             : "mx-auto flex min-h-[420px] max-w-lg flex-col justify-center sm:min-h-[500px] md:min-h-[520px]"
         }
@@ -192,7 +192,7 @@ export const AdmissionSheetUploadPage = () => {
               </button>
             </section>
 
-            {!hasSelectedFile && (
+            {!isInfoPanelOpen && (
               <FeedbackMessages
                 error={error}
                 message={message}
@@ -201,7 +201,7 @@ export const AdmissionSheetUploadPage = () => {
               />
             )}
 
-            {hasSelectedFile && (
+            {isInfoPanelOpen && (
               <section className="space-y-6">
                 <AdmissionInfoCard
                   data={data}
@@ -223,7 +223,6 @@ export const AdmissionSheetUploadPage = () => {
           </>
         )}
       </main>
-
     </AdmissionSheetLayout>
   );
 };
